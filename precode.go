@@ -16,10 +16,10 @@ func Generator(ctx context.Context, ch chan<- int64, fn func(int64)) {
 	// 1. Функция Generator
 	var number int64 = 1
 
+	defer close(ch)
 	for {
 		select {
 		case <-ctx.Done():
-			defer close(ch)
 			return
 		case ch <- number:
 			fn(number)
@@ -31,16 +31,11 @@ func Generator(ctx context.Context, ch chan<- int64, fn func(int64)) {
 // Worker читает число из канала in и пишет его в канал out.
 func Worker(in <-chan int64, out chan<- int64) {
 	// 2. Функция Worker
-	for {
-		v, ok := <-in
-		if !ok {
-			defer close(out)
-			return
-		}
+	defer close(out)
+	for v := range in {
 		out <- v
 		time.Sleep(1 * time.Millisecond)
 	}
-
 }
 
 func main() {
